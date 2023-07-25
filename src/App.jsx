@@ -1,9 +1,13 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import React, { useState, useEffect } from "react";
-import getData from "./utils/getData";
+import { getData, searchLeague } from "./utils/getData";
 
 export default function App() {
   const [leagueId, setLeagueId] = useState(12);
   const [season, setSeason] = useState("2022-2023");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
@@ -24,6 +28,33 @@ export default function App() {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
+  };
+
+  function handleSearchChange(event) {
+    setSearchQuery(event.target.value);
+  }
+
+  const handleSearchSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const data = await searchLeague(searchQuery);
+      setSearchResults(data.response);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  const selectLeague = (league) => {
+    const season2022_2023 = league.seasons.find(
+      (season) => season.season === "2022-2023"
+    );
+    if (season2022_2023) {
+      setLeagueId(league.id);
+      setSeason("2022-2023");
+    } else {
+      console.log("Saison 2022-2023 introuvable pour ce championnat.");
+    }
+    setSearchResults([]);
   };
 
   const handleNbaClick = () => {
@@ -48,7 +79,30 @@ export default function App() {
 
   return (
     <div>
-      <h1>Classements de la saison 2022-2023</h1>
+      <h1>Classements de la saison {season}</h1>
+      <form onSubmit={handleSearchSubmit}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Rechercher un championnat..."
+        />
+        <button type="submit">Rechercher</button>
+      </form>
+      {searchResults.length > 0 && (
+        <div>
+          <h2>Résultats de la recherche :</h2>
+          <ul>
+            {searchResults.map((result) => (
+              <li key={result.id}>
+                <button onClick={() => selectLeague(result)}>
+                  {result.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div>
         <button onClick={handleNbaClick}>NBA</button>
         <button onClick={handleEuroleagueClick}>Euroleague</button>
